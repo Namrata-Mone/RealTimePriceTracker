@@ -1,6 +1,7 @@
 package com.multibank.realtimepricetracker.data.datasource.websocket
 
 import android.util.Log
+import com.multibank.realtimepricetracker.core.common.NetworkConstants.WEB_SOCKET_URL
 import com.multibank.realtimepricetracker.data.model.PriceUpdate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -84,7 +85,6 @@ class WebSocketDataSourceImpl @Inject constructor(
                         eventFlow.emit(WebSocketEvent.Disconnected)
                     }
 
-                    // 🔥 RECONNECT
                     scope.launch {
                         delay(2000)
                         connect()
@@ -102,7 +102,6 @@ class WebSocketDataSourceImpl @Inject constructor(
                         eventFlow.emit(WebSocketEvent.Disconnected)
                     }
 
-                    // 🔥 AUTO RECONNECT
                     scope.launch {
                         delay(2000)
                         Log.d(TAG, "Reconnecting WebSocket...")
@@ -135,6 +134,5 @@ class WebSocketDataSourceImpl @Inject constructor(
 
     private companion object {
         const val TAG = "WebSocketDataSource"
-        const val WEB_SOCKET_URL = "wss://ws.postman-echo.com/raw"
     }
 }
