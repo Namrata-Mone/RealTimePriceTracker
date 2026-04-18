@@ -1,9 +1,10 @@
 package com.multibank.realtimepricetracker.presentation.details.viewmodel
 
+import com.multibank.realtimepricetracker.domain.usecase.EnsurePriceFeedStartedUseCase
+import com.multibank.realtimepricetracker.domain.usecase.ObserveSymbolPriceUseCase
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.multibank.realtimepricetracker.domain.model.StockPrice
-import com.multibank.realtimepricetracker.domain.repository.PriceRepository
 import com.multibank.realtimepricetracker.util.MainDispatcherRule
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -22,7 +23,8 @@ class SymbolDetailsViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private lateinit var priceRepository: PriceRepository
+    private lateinit var observeSymbolPrice: ObserveSymbolPriceUseCase
+    private lateinit var ensurePriceFeedStarted: EnsurePriceFeedStartedUseCase
     private lateinit var savedStateHandle: SavedStateHandle
     private lateinit var priceFlow: MutableStateFlow<StockPrice?>
 
@@ -30,16 +32,18 @@ class SymbolDetailsViewModelTest {
 
     @Before
     fun setup() {
-        priceRepository = mockk(relaxed = true)
+        observeSymbolPrice = mockk()
+        ensurePriceFeedStarted = mockk()
         savedStateHandle = SavedStateHandle(mapOf("symbol" to "AAPL"))
         priceFlow = MutableStateFlow(null)
 
-        every { priceRepository.observePrice("AAPL") } returns priceFlow
-        coEvery { priceRepository.startPriceFeed() } returns Unit
+        every { observeSymbolPrice("AAPL") } returns priceFlow
+        coEvery { ensurePriceFeedStarted() } returns Unit
 
         viewModel = SymbolDetailsViewModel(
             savedStateHandle = savedStateHandle,
-            priceRepository = priceRepository
+            observeSymbolPrice = observeSymbolPrice,
+            ensurePriceFeedStarted = ensurePriceFeedStarted
         )
     }
 
@@ -79,10 +83,10 @@ class SymbolDetailsViewModelTest {
     }
 
     @Test
-    fun `startPriceFeedIfNeeded should call repository only once`() = runTest {
+    fun `startPriceFeedIfNeeded should call use case only once`() = runTest {
         viewModel.startPriceFeedIfNeeded()
         viewModel.startPriceFeedIfNeeded()
 
-        coVerify(exactly = 1) { priceRepository.startPriceFeed() }
+        coVerify(exactly = 1) { ensurePriceFeedStarted() }
     }
 }

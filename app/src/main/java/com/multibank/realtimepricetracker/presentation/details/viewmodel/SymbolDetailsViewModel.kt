@@ -1,10 +1,10 @@
 package com.multibank.realtimepricetracker.presentation.details.viewmodel
 
+import com.multibank.realtimepricetracker.domain.usecase.EnsurePriceFeedStartedUseCase
+import com.multibank.realtimepricetracker.domain.usecase.ObserveSymbolPriceUseCase
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.multibank.realtimepricetracker.core.common.StockMetadata
-import com.multibank.realtimepricetracker.domain.repository.PriceRepository
 import com.multibank.realtimepricetracker.presentation.details.state.SymbolDetailsUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,15 +14,14 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-
 @HiltViewModel
 class SymbolDetailsViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val priceRepository: PriceRepository
+    private val observeSymbolPrice: ObserveSymbolPriceUseCase,
+    private val ensurePriceFeedStarted: EnsurePriceFeedStartedUseCase
 ) : ViewModel() {
 
     private val symbol: String = checkNotNull(savedStateHandle["symbol"])
-
     private var hasRequestedFeedStart = false
 
     private val _uiState = MutableStateFlow(
@@ -42,16 +41,14 @@ class SymbolDetailsViewModel @Inject constructor(
         hasRequestedFeedStart = true
 
         viewModelScope.launch {
-            priceRepository.startPriceFeed()
+            ensurePriceFeedStarted()
         }
     }
 
     private fun observeSymbol() {
         viewModelScope.launch {
-            priceRepository.observePrice(symbol).collect { stockPrice ->
-                _uiState.update {
-                    it.copy(stockPrice = stockPrice)
-                }
+            observeSymbolPrice(symbol).collect { stockPrice ->
+                _uiState.update { it.copy(stockPrice = stockPrice) }
             }
         }
     }
