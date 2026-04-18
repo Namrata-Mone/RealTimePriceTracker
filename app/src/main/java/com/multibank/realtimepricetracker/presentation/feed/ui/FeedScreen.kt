@@ -148,7 +148,7 @@ fun FeedScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(
-                        items = uiState.prices,
+                        items = uiState.prices.sortedBy { it.symbol },
                         key = { it.symbol }
                     ) { stock ->
                         StockPriceRow(
