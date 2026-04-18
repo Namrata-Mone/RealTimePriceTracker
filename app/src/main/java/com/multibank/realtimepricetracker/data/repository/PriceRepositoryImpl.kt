@@ -106,7 +106,7 @@ class PriceRepositoryImpl @Inject constructor(
                     )
                     webSocketDataSource.sendPriceUpdate(update)
                 }
-                delay(2_000)
+                delay(2000)
             }
         }
     }

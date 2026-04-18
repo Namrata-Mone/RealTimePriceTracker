@@ -75,7 +75,7 @@ fun SymbolDetailsScreen(
                         }
 
                         Text(
-                            text = "Real-Time Price Tracker",
+                            text = uiState.symbol,
                             modifier = Modifier.align(Alignment.Center),
                             style = MaterialTheme.typography.titleLarge,
                             color = Color.White,
@@ -104,14 +104,6 @@ fun SymbolDetailsScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Text(
-                            text = uiState.symbol,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            textAlign = TextAlign.Center
-                        )
-
                         if (stock != null) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,

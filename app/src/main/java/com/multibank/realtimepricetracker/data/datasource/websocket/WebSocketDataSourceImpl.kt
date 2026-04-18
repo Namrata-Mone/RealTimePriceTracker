@@ -5,6 +5,7 @@ import com.multibank.realtimepricetracker.core.common.NetworkConstants.WEB_SOCKE
 import com.multibank.realtimepricetracker.data.model.PriceUpdate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -31,14 +32,26 @@ class WebSocketDataSourceImpl @Inject constructor(
     private val eventFlow = MutableSharedFlow<WebSocketEvent>(extraBufferCapacity = 64)
 
     private var webSocket: WebSocket? = null
+    private var reconnectJob: Job? = null
 
     @Volatile
     private var connected = false
+
+    @Volatile
+    private var shouldReconnect = false
+
+    @Volatile
+    private var isManualDisconnect = false
 
     override fun events(): Flow<WebSocketEvent> = eventFlow.asSharedFlow()
 
     override suspend fun connect() {
         if (connected || webSocket != null) return
+
+        isManualDisconnect = false
+        shouldReconnect = true
+        reconnectJob?.cancel()
+        reconnectJob = null
 
         val request = Request.Builder()
             .url(WEB_SOCKET_URL)
@@ -81,13 +94,19 @@ class WebSocketDataSourceImpl @Inject constructor(
 
                     Log.d(TAG, "WebSocket closed: $reason")
 
-                    scope.launch {
-                        eventFlow.emit(WebSocketEvent.Disconnected)
+                    if (!isManualDisconnect) {
+                        scope.launch {
+                            eventFlow.emit(WebSocketEvent.Disconnected)
+                        }
                     }
 
-                    scope.launch {
-                        delay(2000)
-                        connect()
+                    if (shouldReconnect) {
+                        reconnectJob?.cancel()
+                        reconnectJob = scope.launch {
+                            delay(2000)
+                            Log.d(TAG, "Reconnecting WebSocket after close...")
+                            connect()
+                        }
                     }
                 }
 
@@ -102,10 +121,13 @@ class WebSocketDataSourceImpl @Inject constructor(
                         eventFlow.emit(WebSocketEvent.Disconnected)
                     }
 
-                    scope.launch {
-                        delay(2000)
-                        Log.d(TAG, "Reconnecting WebSocket...")
-                        connect()
+                    if (shouldReconnect) {
+                        reconnectJob?.cancel()
+                        reconnectJob = scope.launch {
+                            delay(2000)
+                            Log.d(TAG, "Reconnecting WebSocket after failure...")
+                            connect()
+                        }
                     }
                 }
             }
@@ -113,9 +135,15 @@ class WebSocketDataSourceImpl @Inject constructor(
     }
 
     override suspend fun disconnect() {
+        shouldReconnect = false
+        isManualDisconnect = true
+        reconnectJob?.cancel()
+        reconnectJob = null
+
         webSocket?.close(1000, "Client disconnected")
         webSocket = null
         connected = false
+
         eventFlow.emit(WebSocketEvent.Disconnected)
     }
 

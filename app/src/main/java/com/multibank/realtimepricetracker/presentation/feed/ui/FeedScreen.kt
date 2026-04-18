@@ -136,7 +136,7 @@ fun FeedScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Start the feed to receive live stock price updates.",
+                        text = "Start the feed to receive real time stock price updates.",
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onBackground
                     )
@@ -148,7 +148,7 @@ fun FeedScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(
-                        items = uiState.prices.sortedBy { it.symbol },
+                        items = uiState.prices,
                         key = { it.symbol }
                     ) { stock ->
                         StockPriceRow(

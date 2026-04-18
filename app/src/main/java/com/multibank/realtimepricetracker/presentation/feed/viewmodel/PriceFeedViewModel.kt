@@ -28,7 +28,7 @@ class PriceFeedViewModel @Inject constructor(
         observeConnectionStatus()
     ) { prices, connectionStatus ->
         PriceFeedUiState(
-            prices = prices.sortedBy { it.symbol },
+            prices = prices,
             connectionStatus = connectionStatus
         )
     }.stateIn(
