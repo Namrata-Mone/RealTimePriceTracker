@@ -21,6 +21,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,6 +42,10 @@ fun SymbolDetailsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val stock = uiState.stockPrice
+
+    LaunchedEffect(Unit) {
+        viewModel.startPriceFeedIfNeeded()
+    }
 
     Scaffold { paddingValues ->
         Column(
@@ -123,7 +128,7 @@ fun SymbolDetailsScreen(
                             }
                         } else {
                             Text(
-                                text = "Waiting for live price updates...",
+                                text = "Connecting to real time feed...",
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center

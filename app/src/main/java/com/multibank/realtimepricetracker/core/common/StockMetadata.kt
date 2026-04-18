@@ -28,7 +28,7 @@ object StockMetadata {
             "SONY" -> "Electronics, gaming, and entertainment"
             "SAP" -> "Enterprise resource planning software"
             "ZM" -> "Video communications"
-            else -> "Tracked in the live price feed"
+            else -> "Tracked in the real time price feed"
         }
     }
 }
