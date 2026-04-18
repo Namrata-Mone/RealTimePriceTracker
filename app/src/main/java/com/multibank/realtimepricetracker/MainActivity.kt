@@ -6,7 +6,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.multibank.realtimepricetracker.core.ui.theme.RealTimePriceTrackerTheme
 import com.multibank.realtimepricetracker.presentation.navigation.RealTimePriceTrackerNavHost
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
