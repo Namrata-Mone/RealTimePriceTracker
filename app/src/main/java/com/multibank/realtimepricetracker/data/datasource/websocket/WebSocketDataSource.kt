@@ -9,6 +9,5 @@ interface WebSocketDataSource {
     suspend fun connect()
     suspend fun disconnect()
     suspend fun sendPriceUpdate(priceUpdate: PriceUpdate)
-
     fun isConnected(): Boolean
 }

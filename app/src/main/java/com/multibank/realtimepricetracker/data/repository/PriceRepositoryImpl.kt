@@ -53,25 +53,25 @@ class PriceRepositoryImpl @Inject constructor(
     override fun observeConnectionStatus(): Flow<ConnectionStatus> = connectionStatus
 
     override suspend fun startPriceFeed() {
-        if (priceFeedJob?.isActive == true) return
-
-        connectionStatus.value = ConnectionStatus.CONNECTING
-        webSocketDataSource.connect()
-
         if (observeEventsJob?.isActive != true) {
             observeEventsJob = scope.launch {
                 webSocketDataSource.events().collect { event ->
                     when (event) {
                         WebSocketEvent.Connected -> {
                             connectionStatus.value = ConnectionStatus.CONNECTED
+                            startSendingPricesIfNeeded()
                         }
 
                         WebSocketEvent.Disconnected -> {
                             connectionStatus.value = ConnectionStatus.DISCONNECTED
+                            priceFeedJob?.cancel()
+                            priceFeedJob = null
                         }
 
                         is WebSocketEvent.Failure -> {
                             connectionStatus.value = ConnectionStatus.ERROR
+                            priceFeedJob?.cancel()
+                            priceFeedJob = null
                         }
 
                         is WebSocketEvent.PriceUpdateReceived -> {
@@ -82,15 +82,29 @@ class PriceRepositoryImpl @Inject constructor(
             }
         }
 
+        if (
+            connectionStatus.value == ConnectionStatus.CONNECTED ||
+            connectionStatus.value == ConnectionStatus.CONNECTING
+        ) {
+            return
+        }
+
+        connectionStatus.value = ConnectionStatus.CONNECTING
+        webSocketDataSource.connect()
+    }
+
+    private fun startSendingPricesIfNeeded() {
+        if (priceFeedJob?.isActive == true) return
+
         priceFeedJob = scope.launch {
             while (isActive) {
                 StockSymbols.all.forEach { symbol ->
-                    val priceUpdate = PriceUpdate(
+                    val update = PriceUpdate(
                         symbol = symbol,
                         price = nextPriceFor(symbol),
                         timestamp = System.currentTimeMillis()
                     )
-                    webSocketDataSource.sendPriceUpdate(priceUpdate)
+                    webSocketDataSource.sendPriceUpdate(update)
                 }
                 delay(2_000)
             }
@@ -100,7 +114,12 @@ class PriceRepositoryImpl @Inject constructor(
     override suspend fun stopPriceFeed() {
         priceFeedJob?.cancel()
         priceFeedJob = null
+
+        observeEventsJob?.cancel()
+        observeEventsJob = null
+
         webSocketDataSource.disconnect()
+        connectionStatus.value = ConnectionStatus.DISCONNECTED
     }
 
     private fun updateStockPrice(priceUpdate: PriceUpdate) {
